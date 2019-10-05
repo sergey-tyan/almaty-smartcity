@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const db = require('./queries');
+const path = require('path');
 
 const app = express();
 const port = 3005;
@@ -12,8 +13,10 @@ app.use(
   }),
 );
 
-app.get('/', (request, response) => {
-  response.json({ info: 'Node.js, Express, and Postgres API' });
+app.use(express.static('public'));
+
+app.get('/', function(req, res) {
+  res.sendFile(path.join(__dirname + '/index.html'));
 });
 
 app.get('/items', db.getItems);
