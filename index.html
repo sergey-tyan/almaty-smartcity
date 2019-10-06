@@ -10,14 +10,65 @@
     <script type="text/javascript" src="https://js.api.here.com/v3/3.1/mapsjs-service.js"></script>
     <script type="text/javascript" src="https://js.api.here.com/v3/3.1/mapsjs-ui.js"></script>
     <script type="text/javascript" src="https://js.api.here.com/v3/3.1/mapsjs-mapevents.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 <body id="markers-on-the-map">
 <style>
     #mapContainer{
-        width: 50%;
-        height: 500px;
+        width: 100%;
+        height: 700px;
     }
+    .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
 </style>
-<div id="mapContainer"></div>
-<script type="text/javascript" src='demo.js'></script>
+<div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
+  <h5 class="my-0 mr-md-auto font-weight-normal">Safe Almaty</h5>
+</div>
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-8">
+        <div id="mapContainer"></div>
+    </div>
+    <div class="col-md-4">
+      <form id="formSend">
+        <div class="form-group">
+          <label for="exampleInputEmail1">From</label>
+          <input type="text" name='from' id="from" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="">
+        </div>
+        <div class="form-group">
+          <label for="exampleInputEmail1">To</label>
+          <input type="text" name='to' id="to" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="">
+        </div>
+        <div class="form-group">
+            <label for="exampleInputEmail1">Time</label>
+            <input type="time" name='time' id='time' class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="00:00">
+        </div>
+        <button type="submit" class="btn btn-primary">Go</button>
+        </form>
+    </div>
+  </div>
+
+  <footer class="pt-4 my-md-5 pt-md-5 border-top">
+    <div class="row">
+      <div class="col-12 col-md text-center">
+        <img class="mb-2" src="/docs/4.3/assets/brand/bootstrap-solid.svg" alt="" width="24" height="24">
+        <small class="d-block mb-3 text-muted">&copy; Alamty SmartCity Challenge Hackathon 2019</small>
+      </div>
+    </div>
+  </footer>
+</div>
+ <script type="text/javascript" src='demo.js'></script>
 </body>
 </html>

@@ -1,3 +1,23 @@
+const formSend = document.getElementById('formSend');
+formSend.addEventListener('submit', e => {
+  e.preventDefault();
+  e.stopPropagation();
+  const from = document.getElementById('from').value;
+  const to = document.getElementById('to').value;
+  const [lat1, lon1] = from.split(',');
+  const [lat2, lon2] = to.split(',');
+  const time = document.getElementById('time').value;
+  const queryStr = `/items?lat1=${lat1}&lon1=${lon1}&lat2=${lat2}&lon2=${lon2}&time=${time}`;
+  let promise = fetch(queryStr);
+  promise
+    .then(response => response.json())
+    .then(data => {
+      console.log(getBoundingCoordinates(data), data);
+      document.getElementById('mapContainer').innerHTML = '';
+      renderMap(data, getBoundingCoordinates(data), { start: from, end: to });
+    });
+});
+
 getBoundingCoordinates = points => {
   let str = '';
   points.forEach(point => {
@@ -17,23 +37,120 @@ getBoundingCoordinates = points => {
   return str.slice(0, str.length - 1);
 };
 
-const startLat = '43.238562';
-const startLon = '76.897931';
+function setUpClickListener(map) {
+  // Attach an event listener to map display
+  // obtain the coordinates and display in an alert box.
+  map.addEventListener('tap', function(evt) {
+    var coord = map.screenToGeo(
+      evt.currentPointer.viewportX,
+      evt.currentPointer.viewportY,
+    );
+    console.log(
+      'Clicked at ' +
+        Math.abs(coord.lat.toFixed(4)) +
+        (coord.lat > 0 ? 'N' : 'S') +
+        ' ' +
+        Math.abs(coord.lng.toFixed(4)) +
+        (coord.lng > 0 ? 'E' : 'W'),
+    );
+  });
+}
 
-const endLat = '43.262367';
-const endLon = '76.950409';
+function addDraggableMarker(map, behavior) {
+  var marker = new H.map.Marker(
+    { lat: 42.35805, lng: -71.0636 },
+    {
+      // mark the object as volatile for the smooth dragging
+      volatility: true,
+    },
+  );
+  // Ensure that the marker can receive drag events
+  marker.draggable = true;
+  map.addObject(marker);
+
+  // disable the default draggability of the underlying map
+  // and calculate the offset between mouse and target's position
+  // when starting to drag a marker object:
+  map.addEventListener(
+    'dragstart',
+    function(ev) {
+      var target = ev.target,
+        pointer = ev.currentPointer;
+      if (target instanceof H.map.Marker) {
+        var targetPosition = map.geoToScreen(target.getGeometry());
+        target['offset'] = new H.math.Point(
+          pointer.viewportX - targetPosition.x,
+          pointer.viewportY - targetPosition.y,
+        );
+        behavior.disable();
+      }
+    },
+    false,
+  );
+
+  // re-enable the default draggability of the underlying map
+  // when dragging has completed
+  map.addEventListener(
+    'dragend',
+    function(ev) {
+      console.log(ev, map.getObjects());
+      const cords = map.screenToGeo(
+        ev.currentPointer.viewportX,
+        ev.currentPointer.viewportY,
+      );
+
+      const target = ev.target;
+      if (target instanceof H.map.Marker) {
+        if (target.name === 'A') {
+          document.getElementById('from').value = cords.lat + ',' + cords.lng;
+        }
+        if (target.name === 'B') {
+          document.getElementById('to').value = cords.lat + ',' + cords.lng;
+        }
+        behavior.enable();
+      }
+    },
+    false,
+  );
+
+  // Listen to the drag event and move the position of the marker
+  // as necessary
+  map.addEventListener(
+    'drag',
+    function(ev) {
+      var target = ev.target,
+        pointer = ev.currentPointer;
+      if (target instanceof H.map.Marker) {
+        target.setGeometry(
+          map.screenToGeo(
+            pointer.viewportX - target['offset'].x,
+            pointer.viewportY - target['offset'].y,
+          ),
+        );
+      }
+    },
+    false,
+  );
+}
+
+const defaultStart = '43.238562,76.897931';
+const defaultEnd = '43.262367,76.950409';
+const [startLat, startLon] = defaultStart;
+const [endLat, endLon] = defaultEnd;
 
 let promise = fetch(
   `/items?lat1=${startLat}&lon1=${startLon}&lat2=${endLat}&lon2=${endLon}&time=00:10`,
-);
-promise
+)
   .then(response => response.json())
   .then(data => {
     console.log(getBoundingCoordinates(data));
-    renderMap(data, getBoundingCoordinates(data));
+    renderMap(data, getBoundingCoordinates(data), {
+      start: defaultStart,
+      end: defaultEnd,
+    });
   });
 
-const renderMap = (data, coordinates) => {
+const renderMap = (data, coordinates, direction) => {
   // Instantiate a map and platform object:
   var platform = new H.service.Platform({
     apikey: 'wdVmvJvVShliZkN7rkRKxl4nHCsHgWc-YN5kwYTIXL8',
@@ -57,6 +174,14 @@ const renderMap = (data, coordinates) => {
   var behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
   var ui = H.ui.UI.createDefault(map, defaultLayers);
 
+  // Add event listeners:
+  map.addEventListener('tap', function(evt) {
+    // Log 'tap' and 'mouse' events:
+    console.log(evt);
+  });
+
+  setUpClickListener(map);
+
   var svgMarkup =
     '<svg width="24" height="24" ' +
     'xmlns="http://www.w3.org/2000/svg">' +
@@ -70,9 +195,9 @@ const renderMap = (data, coordinates) => {
     // The routing mode:
     mode: 'fastest;pedestrian;traffic:disabled',
     // The start point of the route:
-    waypoint0: `geo!${startLat},${startLon}`, // 43.238562, 76.897931
+    waypoint0: `geo!${direction.start}`, // 43.238562, 76.897931
     // The end point of the route:
-    waypoint1: `geo!${endLat},${endLon}`, // 43.262367, 76.950409
+    waypoint1: `geo!${direction.end}`, // 43.262367, 76.950409
     // To retrieve the shape of the route we choose the route
     // representation mode 'display'
     avoidareas: coordinates,
@@ -111,12 +236,16 @@ const renderMap = (data, coordinates) => {
         lat: startPoint.latitude,
         lng: startPoint.longitude,
       });
+      startMarker.name = 'A';
+      startMarker.draggable = true;
 
       // Create a marker for the end point:
       var endMarker = new H.map.Marker({
         lat: endPoint.latitude,
         lng: endPoint.longitude,
       });
+      endMarker.name = 'B';
+      endMarker.draggable = true;
 
       const markers = [];
       data.forEach(item => {
@@ -132,6 +261,8 @@ const renderMap = (data, coordinates) => {
       map.getViewModel().setLookAtData({ bounds: routeLine.getBoundingBox() });
     }
   };
+
+  addDraggableMarker(map, behavior);
 
   // Get an instance of the routing service:
   var router = platform.getRoutingService();
@@ -152,3 +283,17 @@ const renderMap = (data, coordinates) => {
     moveMapToAlmaty(map);
   };
 };
+
+const time = document.getElementById('time');
+function appendLeadingZeroes(n) {
+  if (n <= 9) {
+    return '0' + n;
+  }
+  return n;
+}
+let current_datetime = new Date();
+let formatted_date =
+  appendLeadingZeroes(current_datetime.getHours()) +
+  ':' +
+  appendLeadingZeroes(current_datetime.getMinutes());
+time.value = formatted_date;
