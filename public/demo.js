@@ -22,7 +22,7 @@ getBoundingCoordinates = points => {
   let str = '';
   points.forEach(point => {
     const earth_radius = 6371; // km
-    const delta = 0.05; // km (50 m)
+    const delta = 0.2; // km (200 m)
     const lng = +point.longitude;
     const lat = +point.latitude;
     const lng1 =
@@ -241,20 +241,30 @@ const renderMap = (data, coordinates, direction) => {
       });
 
       var group = new H.map.Group();
-      group.addEventListener('tap', function (evt) {
-        // event target is the marker itself, group is a parent event target
-        // for all objects that it contains
-        var bubble =  new H.ui.InfoBubble(evt.target.getGeometry(), {
-          // read custom data
-          content: evt.target.getData()
-        });
-        // show info bubble
-        ui.addBubble(bubble);
-      }, false);
+      group.addEventListener(
+        'tap',
+        function(evt) {
+          // event target is the marker itself, group is a parent event target
+          // for all objects that it contains
+          var bubble = new H.ui.InfoBubble(evt.target.getGeometry(), {
+            // read custom data
+            content: evt.target.getData(),
+          });
+          // show info bubble
+          ui.addBubble(bubble);
+        },
+        false,
+      );
 
-      addMarkerToGroup(group, 'A', {lat: startPoint.latitude, lng: startPoint.longitude});
+      addMarkerToGroup(group, 'A', {
+        lat: startPoint.latitude,
+        lng: startPoint.longitude,
+      });
 
-      addMarkerToGroup(group, 'B', {lat: endPoint.latitude, lng: endPoint.longitude});
+      addMarkerToGroup(group, 'B', {
+        lat: endPoint.latitude,
+        lng: endPoint.longitude,
+      });
 
       // // Create a marker for the start point:
       // var startMarker = new H.map.Marker({
@@ -307,7 +317,6 @@ const renderMap = (data, coordinates, direction) => {
   window.onload = function() {
     moveMapToAlmaty(map);
   };
-
 };
 
 const time = document.getElementById('time');
