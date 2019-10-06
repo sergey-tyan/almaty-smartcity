@@ -12,7 +12,7 @@ formSend.addEventListener('submit', e => {
   promise
     .then(response => response.json())
     .then(data => {
-      console.log(getBoundingCoordinates(data), data);
+      // console.log(getBoundingCoordinates(data), data);
       document.getElementById('mapContainer').innerHTML = '';
       renderMap(data, getBoundingCoordinates(data), { start: from, end: to });
     });
@@ -45,14 +45,14 @@ function setUpClickListener(map) {
       evt.currentPointer.viewportX,
       evt.currentPointer.viewportY,
     );
-    console.log(
-      'Clicked at ' +
-        Math.abs(coord.lat.toFixed(4)) +
-        (coord.lat > 0 ? 'N' : 'S') +
-        ' ' +
-        Math.abs(coord.lng.toFixed(4)) +
-        (coord.lng > 0 ? 'E' : 'W'),
-    );
+    // console.log(
+    //   'Clicked at ' +
+    //     Math.abs(coord.lat.toFixed(4)) +
+    //     (coord.lat > 0 ? 'N' : 'S') +
+    //     ' ' +
+    //     Math.abs(coord.lng.toFixed(4)) +
+    //     (coord.lng > 0 ? 'E' : 'W'),
+    // );
   });
 }
 
@@ -93,7 +93,7 @@ function addDraggableMarker(map, behavior) {
   map.addEventListener(
     'dragend',
     function(ev) {
-      console.log(ev, map.getObjects());
+      // console.log(ev, map.getObjects());
       const cords = map.screenToGeo(
         ev.currentPointer.viewportX,
         ev.currentPointer.viewportY,
@@ -143,12 +143,21 @@ let promise = fetch(
 )
   .then(response => response.json())
   .then(data => {
-    console.log(getBoundingCoordinates(data));
+    // console.log(getBoundingCoordinates(data));
     renderMap(data, getBoundingCoordinates(data), {
       start: defaultStart,
       end: defaultEnd,
     });
   });
+
+function addMarkerToGroup(group, name, coordinate) {
+  var marker = new H.map.Marker(coordinate);
+  // add custom data to the marker
+  marker.setData(name);
+  marker.name = name;
+  marker.draggable = true;
+  group.addObject(marker);
+}
 
 const renderMap = (data, coordinates, direction) => {
   // Instantiate a map and platform object:
@@ -177,7 +186,7 @@ const renderMap = (data, coordinates, direction) => {
   // Add event listeners:
   map.addEventListener('tap', function(evt) {
     // Log 'tap' and 'mouse' events:
-    console.log(evt);
+    // console.log(evt);
   });
 
   setUpClickListener(map);
@@ -185,10 +194,10 @@ const renderMap = (data, coordinates, direction) => {
   var svgMarkup =
     '<svg width="24" height="24" ' +
     'xmlns="http://www.w3.org/2000/svg">' +
-    '<rect stroke="white" fill="#1b468d" x="1" y="1" width="22" ' +
+    '<rect stroke="white" fill="red" x="1" y="1" width="22" ' +
     'height="22" /><text x="12" y="18" font-size="12pt" ' +
     'font-family="Arial" font-weight="bold" text-anchor="middle" ' +
-    'fill="white">H</text></svg>';
+    'fill="white">!</text></svg>';
 
   // Create the parameters for the routing request:
   var routingParameters = {
@@ -231,21 +240,37 @@ const renderMap = (data, coordinates, direction) => {
         style: { strokeColor: 'blue', lineWidth: 3 },
       });
 
-      // Create a marker for the start point:
-      var startMarker = new H.map.Marker({
-        lat: startPoint.latitude,
-        lng: startPoint.longitude,
-      });
-      startMarker.name = 'A';
-      startMarker.draggable = true;
+      var group = new H.map.Group();
+      group.addEventListener('tap', function (evt) {
+        // event target is the marker itself, group is a parent event target
+        // for all objects that it contains
+        var bubble =  new H.ui.InfoBubble(evt.target.getGeometry(), {
+          // read custom data
+          content: evt.target.getData()
+        });
+        // show info bubble
+        ui.addBubble(bubble);
+      }, false);
 
-      // Create a marker for the end point:
-      var endMarker = new H.map.Marker({
-        lat: endPoint.latitude,
-        lng: endPoint.longitude,
-      });
-      endMarker.name = 'B';
-      endMarker.draggable = true;
+      addMarkerToGroup(group, 'A', {lat: startPoint.latitude, lng: startPoint.longitude});
+
+      addMarkerToGroup(group, 'B', {lat: endPoint.latitude, lng: endPoint.longitude});
+
+      // // Create a marker for the start point:
+      // var startMarker = new H.map.Marker({
+      //   lat: startPoint.latitude,
+      //   lng: startPoint.longitude,
+      // });
+      // startMarker.name = 'A';
+      // startMarker.draggable = true;
+
+      // // Create a marker for the end point:
+      // var endMarker = new H.map.Marker({
+      //   lat: endPoint.latitude,
+      //   lng: endPoint.longitude,
+      // });
+      // endMarker.name = 'B';
+      // endMarker.draggable = true;
 
       const markers = [];
       data.forEach(item => {
@@ -255,7 +280,7 @@ const renderMap = (data, coordinates, direction) => {
       });
 
       // Add the route polyline and the two markers to the map:
-      map.addObjects([routeLine, startMarker, endMarker, ...markers]);
+      map.addObjects([routeLine, group, ...markers]);
 
       // Set the map's viewport to make the whole route visible:
       map.getViewModel().setLookAtData({ bounds: routeLine.getBoundingBox() });
@@ -282,6 +307,7 @@ const renderMap = (data, coordinates, direction) => {
   window.onload = function() {
     moveMapToAlmaty(map);
   };
+
 };
 
 const time = document.getElementById('time');
